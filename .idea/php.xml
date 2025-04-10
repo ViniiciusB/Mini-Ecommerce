@@ -22,6 +22,7 @@
   </component>
   <component name="PhpIncludePathManager">
     <include_path>
+      <path value="$PROJECT_DIR$/Loja-venda/vendor/_laravel_idea" />
       <path value="$PROJECT_DIR$/Loja-venda/vendor/symfony/error-handler" />
       <path value="$PROJECT_DIR$/Loja-venda/vendor/symfony/polyfill-php83" />
       <path value="$PROJECT_DIR$/Loja-venda/vendor/symfony/console" />
@@ -137,7 +138,6 @@
       <path value="$PROJECT_DIR$/Loja-venda/vendor/symfony/var-dumper" />
       <path value="$PROJECT_DIR$/Loja-venda/vendor/symfony/polyfill-intl-idn" />
       <path value="$PROJECT_DIR$/Loja-venda/vendor/symfony/polyfill-mbstring" />
-      <path value="$PROJECT_DIR$/Loja-venda/vendor/_laravel_idea" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2">
@@ -154,6 +154,7 @@
   <component name="PhpUnit">
     <phpunit_settings>
       <PhpUnitSettings configuration_file_path="$PROJECT_DIR$/Loja-venda/phpunit.xml" custom_loader_path="$PROJECT_DIR$/Loja-venda/vendor/autoload.php" use_configuration_file="true" />
+      <PhpUnitSettings configuration_file_path="$PROJECT_DIR$/phpunit.xml" custom_loader_path="$PROJECT_DIR$/vendor/autoload.php" use_configuration_file="true" />
     </phpunit_settings>
   </component>
   <component name="Psalm">
