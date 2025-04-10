@@ -2,59 +2,58 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreUserRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
-use function Laravel\Prompts\password;
 
-/**
- * Classe responsável pelo gerenciamento de usuários, incluindo registro, login, informações do usuário,
- * logout e renovação de token.
- */
 class UserController extends Controller
 {
-    /**
-     * Método para registrar um novo usuário.
-     * Valida a requisição, cria o usuário e retorna um token JWT.
-     */
-    public function register(StoreUserRequest $request)
+    public function register(Request $request)
     {
+        // Obtém as mensagens definidas no model
+        $messages = User::validate([]);
+
+        // Define as regras necessárias
+        $rules = [
+            'name'     => 'required|string|min:3',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'cpf'      => 'required|unique:users|cpf',
+            //'is_admin' => 'boolean',
+        ];
+        // Cria validador usando as regras e as mensagens do model
+        $validator = \Validator::make($request->all(), $rules, $messages);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Dados validados
+        $validatedData = $validator->validated();
+
         try {
-            // Criação do usuário baseado nos dados do request
+            // Cria o usuário
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password), // Hash da senha para segurança
-                'cpf' => $request->cpf,
-                'is_admin' => $data['is_admin'] ?? false, // Adiciona admin com valor padrão false
+                'name'     => $validatedData['name'],
+                'email'    => $validatedData['email'],
+                'password' => Hash::make($validatedData['password']),
+                'cpf'      => $validatedData['cpf'],
+                'is_admin' => false,
             ]);
+
+            // Gera token JWT
+            $token = \Tymon\JWTAuth\Facades\JWTAuth::fromUser($user);
+
         } catch (\Exception $e) {
-            // Retorna erro em caso de falha na criação do usuário
-            return response()->json(['error' => 'Erro ao criar usuário: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Erro ao criar usuário: ' . $e->getMessage()], 422);
         }
 
-        try {
-            // Geração do token JWT para o usuário criado
-            $token = JWTAuth::fromUser($user);
-        } catch (JWTException $e) {
-            // Retorna erro caso a geração do token falhe
-            return response()->json(['error' => 'Erro ao gerar token: ' . $e->getMessage()], 500);
-        }
-
-        // Resposta com sucesso do registro e o token gerado
         return response()->json([
-            'message' => 'Usuário registrado com sucesso!',
-            'user' => $user,
-            'token' => $token
+            'user'  => $user, 'token' => $token
         ], 201);
     }
 
-    /**
-     * Método para autenticar um usuário e gerar token de acesso.
-     */
+
     public function login(Request $request)
     {
         // Coleta apenas as credenciais necessárias
@@ -63,33 +62,30 @@ class UserController extends Controller
         try {
             // Valida as credenciais do usuário e gera o token
             if (!$token = auth()->attempt($credentials)) {
-                return response()->json(['error' => 'Credenciais inválidas'], 401);
+                throw new \Exception('Credenciais inválidas', 422);
             }
         } catch (JWTException $e) {
-            // Retorna erro caso a geração do token falhe
-            return response()->json(['error' => 'Erro ao criar o token: ' . $e->getMessage()], 500);
+            throw new \Exception('Erro ao criar token', 422);
         }
 
         // Resposta com sucesso do login e os detalhes do token
         return response()->json([
-            'message' => 'Login realizado com sucesso!',
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60
-        ]);
+        ,200]);
     }
 
     /**
      * Método para retornar os dados do usuário autenticado.
      */
-    public function me()
+    public function userLoginData()
     {
         // Recupera o usuário autenticado
         $user = auth()->user();
 
         // Retorna os dados do usuário
         return response()->json([
-            'message' => 'Seus dados de usuário',
             'user' => $user,
         ]);
     }
@@ -101,7 +97,6 @@ class UserController extends Controller
     {
         // Finaliza a autenticação do usuário
         auth()->logout();
-        return response()->json(['message' => 'Logout realizado com sucesso!']);
     }
 
     /**

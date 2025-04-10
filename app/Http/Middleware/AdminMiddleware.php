@@ -26,7 +26,7 @@ class AdminMiddleware
 
         // Verifica se o usuário não está autenticado ou não é administrador.
         if (!$user || !$user->is_admin) {
-            return response()->json(['error' => 'Acesso negado. Apenas administradores têm permissão.'], 403);
+            return response()->json(['error' => 'Acesso negado. Apenas administradores têm permissão.'], 422);
         }
 
         return $next($request); // Continua para o próximo middleware ou controlador.

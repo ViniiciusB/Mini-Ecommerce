@@ -23,7 +23,7 @@ class Product extends Model
     protected $fillable = [
         'name',        // Nome do produto.
         'price',       // Preço do produto.
-        'description', // Descrição do produto.
+        'description' => 'nullable', // Descrição do produto.
         'stock',       // Quantidade em estoque.
     ];
 }

@@ -29,7 +29,6 @@ class DiscountController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Regra de desconto criada!',
             'rule' => $rule
         ], 201);
     }

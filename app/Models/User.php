@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -24,7 +26,7 @@ class User extends Authenticatable implements JWTSubject
         'email',  // Email do usuário.
         'password', // Senha do usuário.
         'cpf',    // CPF do usuário.
-        'admin'   // Define se o usuário é administrador.
+        'is_admin'   // Define se o usuário é administrador.
     ];
 
     /**
@@ -48,6 +50,25 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime', // Converte o campo de verificação de email para datetime.
             'password' => 'hashed',           // A senha será automaticamente encriptada.
         ];
+    }
+
+    /**
+     * Validação dos dados do usuário em português.
+     *
+     * @param array $data
+     * @return array
+     * @throws ValidationException
+     */
+    public static function validate(array $data): array
+    {
+        $messages = [
+            'required' => 'O campo :attribute é obrigatório.',
+            'email' => 'O :attribute deve ser um endereço de e-mail válido.',
+            'unique' => 'Este :attribute já está sendo utilizado.',
+            'min' => 'O campo :attribute deve ter pelo menos :min caracteres.',
+            'boolean' => 'O campo :attribute deve ser verdadeiro ou falso.',
+        ];
+        return $messages;
     }
 
     /**

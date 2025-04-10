@@ -34,11 +34,11 @@ class OrderController extends Controller
             // Criar um novo pedido com status inicial
             $order = Order::create([
                 'user_id' => $userId,
-                'status' => 'awaiting_payment',
+                'status' => Order::STATUS_AWAITING_PAYMENT,
+                'subTotal' => 0,
                 'total' => 0
             ]);
-
-            $total = 0;
+            $subtotal = 0;
 
             // Processar cada item do pedido
             foreach ($itemsData as $item) {
@@ -56,47 +56,50 @@ class OrderController extends Controller
 
                 // Calcular subtotal do item
                 $price = $product->price;
-                $subtotal = $price * $item['quantity'];
-                $total += $subtotal;
+                $itemSubtotal = $price * $item['quantity'];
+                $subtotal += $itemSubtotal;
 
-                // Criar o item do pedido
+                // Cria o item
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $product->id,
                     'quantity' => $item['quantity'],
                     'price' => $price
                 ]);
-
-                // Atualizar o total do pedido
-                $order->total = $total;
-                $order->save();
             }
+            // Verificar se há descontos aplicáveis
+            $discountPercent = $this->getDiscount($subtotal);
+            $discount = ($subtotal * $discountPercent) / 100;
+            $total = $subtotal - $discount;
+
+            // Atualizar o subtotal e total do pedido
+            $order->subTotal = $subtotal;
+            $order->total = $total;
+            $order->save();
 
             DB::commit();
 
             // Retornar resposta de sucesso
             return response()->json([
-                'message' => 'Pedido criado com sucesso!',
                 'order' => $order->load('items')
-            ], 201);
+            ], 200);
         } catch (Throwable $e) {
             DB::rollBack();
             // Retornar erro em caso de exceção
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $e->getMessage()], 422);
         }
     }
-
     /**
      * Obtém o percentual de desconto com base no total do pedido.
      */
-    protected function getDiscount(float $total): float
+    protected function getDiscount(float $subtotal): float
     {
-        $rule = Discount::where('min_total', '<=', $total)
+        $rule = Discount::where('min_total', '<=', $subtotal)
             ->orderBy('min_total', 'desc')
             ->first();
 
         if ($rule) {
-            return (float)$rule->discount_percent; // Exemplo: retornar 20% de desconto
+            return (float)$rule->discount_percent;
         }
 
         return 0;
@@ -110,3 +113,4 @@ class OrderController extends Controller
         return Order::with('items.product')->findOrFail($id);
     }
 }
+

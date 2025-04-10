@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
@@ -15,79 +17,47 @@ use Illuminate\Support\Facades\Validator;
  */
 class ProductController extends Controller
 {
-    /**
-     * Cria um novo produto.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function store(Request $request)
     {
         // Valida os dados enviados na requisição
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:4|max:30',
             'price' => 'required|numeric',
-            'description' => 'required|string|min:10',
+            'description' => 'nullable|string|min:10',
             'stock' => 'required|integer|min:0'
         ]);
 
-        // Retorna erro 422 caso a validação falhe
         if ($validator->fails()) {
-            return response()->json(['erros' => $validator->errors()], 422);
+            throw new Exception('Erros de validação: ' . $validator->errors(), 422);
         }
 
         try {
             // Cria o produto no banco de dados
-            $product = Product::create(([
-                'name' => $request->name,
-                'price' => $request->price,
+            $product = Product::create([
+                'name'        => $request->name,
+                'price'       => $request->price,
                 'description' => $request->description,
-                'stock' => $request->stock
-            ]));
+                'stock'       => $request->stock
+            ]);
         } catch (Exception $e) {
-            // Retorna erro 500 caso ocorra uma exceção
-            return response()->json(['error' => $e->getMessage()], 500);
+            throw new Exception('Erro ao criar produto: ' . $e->getMessage(), 422);
         }
-
-        // Retorna sucesso 201 informando que o produto foi criado
-        return response()->json(['message' => 'Produto criado com sucesso!'], 201);
+        return response()->json(201);
     }
-
-    /**
-     * Exibe os dados de um produto específico.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function show($id)
     {
-        // Busca o produto pelo ID
-        $product = Product::find($id);
-
-        // Retorna erro 404 caso o produto não seja encontrado
+        $product = Product::findOrFail($id);
         if (!$product) {
-            return response()->json(['erro' => 'Produto não encontrado'], 404);
+            throw new Exception('Produto não encontrado', 422);
         }
-
-        // Retorna o produto encontrado
         return response()->json($product);
     }
 
-    /**
-     * Atualiza as informações de um produto específico.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function update(Request $request, $id)
     {
-        // Busca o produto pelo ID
-        $product = Product::find($id);
-
-        // Retorna erro 404 caso o produto não seja encontrado
+        $product = Product::findOrFail($id);
         if (!$product) {
-            return response()->json(['error' => 'Produto não encontrado'], 404);
+            throw new Exception('Produto não encontrado', 422);
         }
 
         // Atualiza os dados do produto
@@ -97,38 +67,23 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
-    /**
-     * Remove um produto específico do banco de dados.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function destroy($id)
     {
-        // Busca o produto pelo ID
-        $product = Product::find($id);
-
-        // Retorna erro 404 caso o produto não seja encontrado
+        $product = Product::findOrFail($id);
         if (!$product) {
-            return response()->json(['error' => 'Produto não encontrado'], 404);
+            throw new Exception('Produto não encontrado', 422);
         }
 
-        // Deleta o produto
         $product->delete();
-
-        // Retorna mensagem de sucesso
-        return response()->json(['message' => 'Produto deletado com sucesso']);
+        return response()->json(202);
     }
-
-    /**
-     * Retorna uma lista de todos os produtos.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function index()
+    public function index($id)
     {
-        // Retorna lista de todos os produtos
-        return Product::all();
+        $product = Product::findOrFail($id);
+        if (!$product) {
+            throw new Exception('Produto não encontrado', 422);
+        }
+        $product->all();
+        return response()->json($product);
     }
 }
-
